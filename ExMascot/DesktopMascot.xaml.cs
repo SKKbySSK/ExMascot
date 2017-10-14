@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using ExMascot.Extensions;
 
 namespace ExMascot
@@ -20,6 +21,7 @@ namespace ExMascot
     /// </summary>
     public partial class DesktopMascot : Window
     {
+        bool locked = false;
         bool capturing = false;
         Profile prof = null;
         string path;
@@ -31,9 +33,13 @@ namespace ExMascot
             Activated += DesktopMascot_Activated;
             Deactivated += DesktopMascot_Deactivated;
 
+            double mw = 0, mh = 0;
             foreach (string f in Profile.Files)
             {
-                MascotV.MascotSources.Add(new BitmapImage(new Uri(f)));
+                BitmapImage bi = new BitmapImage(new Uri(f));
+                MascotV.MascotSources.Add(bi);
+                mw = bi.Width > mw ? bi.Width : mw;
+                mh = bi.Height > mh ? bi.Height : mh;
             }
 
             Topmost = Profile.TopMost;
@@ -41,8 +47,19 @@ namespace ExMascot
 
             Left = Profile.X;
             Top = Profile.Y;
+
+            if (Profile.Width <= 0)
+                Profile.Width = mw;
+            if (Profile.Height <= 0)
+                Profile.Height = mh;
+
+            Width = Profile.Width;
+            Height = Profile.Height;
+
             path = Path;
             prof = Profile;
+            CloseB.Visibility = Visibility.Hidden;
+            LockB.Visibility = Visibility.Hidden;
         }
 
         private void DesktopMascot_Deactivated(object sender, EventArgs e)
@@ -83,6 +100,50 @@ namespace ExMascot
             prof.X = Left;
             prof.Y = Top;
             Profile.ExportXML(prof, path);
+        }
+
+        private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                if (CloseB.Visibility == Visibility.Hidden)
+                {
+                    CloseB.Visibility = Visibility.Visible;
+                    LockB.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    CloseB.Visibility = Visibility.Hidden;
+                    LockB.Visibility = Visibility.Hidden;
+                }
+            }
+        }
+
+        private void CloseB_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private void LockB_Click(object sender, RoutedEventArgs e)
+        {
+            if (locked)
+            {
+                locked = false;
+                ViewParent.MouseLeftButtonDown += Grid_MouseLeftButtonDown;
+                ViewParent.MouseLeftButtonUp += Grid_MouseLeftButtonUp;
+                ViewParent.MouseMove += Grid_MouseMove;
+                MascotV.IsEnableRotation = prof.OnClick;
+                LockB.Content = "c";
+            }
+            else
+            {
+                locked = true;
+                ViewParent.MouseLeftButtonDown -= Grid_MouseLeftButtonDown;
+                ViewParent.MouseLeftButtonUp -= Grid_MouseLeftButtonUp;
+                ViewParent.MouseMove -= Grid_MouseMove;
+                MascotV.IsEnableRotation = false;
+                LockB.Content = "d";
+            }
         }
     }
 }
