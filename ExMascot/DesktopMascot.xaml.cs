@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using ExMascot.Extensions;
+using System.Windows.Media.Animation;
 
 namespace ExMascot
 {
@@ -21,7 +22,7 @@ namespace ExMascot
     /// </summary>
     public partial class DesktopMascot : Window
     {
-        bool locked = false;
+        DispatcherTimer timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle);
         bool capturing = false;
         Profile prof = null;
         string path;
@@ -41,25 +42,80 @@ namespace ExMascot
                 mw = bi.Width > mw ? bi.Width : mw;
                 mh = bi.Height > mh ? bi.Height : mh;
             }
+            MascotV.CurrentMascotIndex = Profile.GetCurrentIndex();
+            if (MascotV.CurrentMascotIndex < 0)
+                Close();
 
             Topmost = Profile.TopMost;
             MascotV.IsEnableRotation = Profile.OnClick;
 
-            Left = Profile.X;
-            Top = Profile.Y;
+            Width = SystemParameters.PrimaryScreenWidth;
+            Height = SystemParameters.PrimaryScreenHeight;
+            Left = 0;
+            Top = 0;
+
+            ViewParent.Margin = new Thickness(Profile.X, Profile.Y, 0, 0);
 
             if (Profile.Width <= 0)
                 Profile.Width = mw;
             if (Profile.Height <= 0)
                 Profile.Height = mh;
 
-            Width = Profile.Width;
-            Height = Profile.Height;
+            ViewParent.Width = Profile.Width;
+            ViewParent.Height = Profile.Height;
 
             path = Path;
             prof = Profile;
             CloseB.Visibility = Visibility.Hidden;
             LockB.Visibility = Visibility.Hidden;
+
+            UpdateLockState();
+
+            timer.Interval = TimeSpan.FromMilliseconds(Profile.Interval);
+            timer.Tick += Timer_Tick;
+            timer.Start();
+        }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            if (prof.WalkAround)
+            {
+                const double DurationParHandred = 600;
+
+                Random RDeltaX = new Random(Environment.TickCount);
+                Random RDeltaY = new Random(Environment.TickCount + 10);
+
+                double Y = RDeltaX.NextDouble() * (SystemParameters.WorkArea.Height - ViewParent.Height);
+                double X = RDeltaY.NextDouble() * (SystemParameters.WorkArea.Width - ViewParent.Width);
+
+                double dX = ViewParent.Margin.Left - X, dY = ViewParent.Margin.Top - Y;
+                double length = Math.Sqrt((dX * dX) + (dY * dY));
+                double duration = length / 100 * DurationParHandred;
+                TimeSpan tdur = TimeSpan.FromMilliseconds(duration);
+
+                ContinuityStoryboard csb = MascotV.WalkWithJumpAnimate(tdur);
+                csb.CurrentStoryboardChanging += (_, ev) =>
+                {
+                    if(ev.Index == 1)
+                    {
+                        ThicknessAnimation ta = new ThicknessAnimation(ViewParent.Margin, new Thickness(X, Y, 0, 0), new Duration(tdur));
+                        ta.FillBehavior = FillBehavior.Stop;
+                        ta.Completed += (_1, _2) =>
+                        {
+                            ViewParent.Margin = new Thickness(X, Y, 0, 0);
+                        };
+
+                        ViewParent.BeginAnimation(MarginProperty, ta);
+                    }
+                };
+                csb.Completed += (_, _2) =>
+                {
+                    csb.StopAnimation();
+                    timer.Start();
+                };
+                csb.BeginAnimation();
+                timer.Stop();
+            }
         }
 
         private void DesktopMascot_Deactivated(object sender, EventArgs e)
@@ -75,7 +131,7 @@ namespace ExMascot
         Point lastPoint;
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            lastPoint = e.GetPosition(this);
+            lastPoint = e.GetPosition(ViewParent);
             capturing = true;
         }
 
@@ -88,17 +144,19 @@ namespace ExMascot
         {
             if (capturing)
             {
-                Point nPoint = e.GetPosition(this);
+                Point nPoint = e.GetPosition(ViewParent);
                 Point delta = new Point(nPoint.X - lastPoint.X, nPoint.Y - lastPoint.Y);
-                Left += delta.X;
-                Top += delta.Y;
+                ViewParent.Margin = new Thickness(ViewParent.Margin.Left + delta.X, ViewParent.Margin.Top + delta.Y, 0, 0);
             }
         }
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            prof.X = Left;
-            prof.Y = Top;
+            prof.X = ViewParent.Margin.Left;
+            prof.Y = ViewParent.Margin.Top;
+            prof.Width = ViewParent.Width;
+            prof.Height = ViewParent.Height;
+            prof.Index = MascotV.CurrentMascotIndex;
             Profile.ExportXML(prof, path);
         }
 
@@ -126,23 +184,21 @@ namespace ExMascot
 
         private void LockB_Click(object sender, RoutedEventArgs e)
         {
-            if (locked)
+            prof.Locked = !prof.Locked;
+            UpdateLockState();
+        }
+
+        void UpdateLockState()
+        {
+            if (prof.Locked)
             {
-                locked = false;
-                ViewParent.MouseLeftButtonDown += Grid_MouseLeftButtonDown;
-                ViewParent.MouseLeftButtonUp += Grid_MouseLeftButtonUp;
-                ViewParent.MouseMove += Grid_MouseMove;
-                MascotV.IsEnableRotation = prof.OnClick;
-                LockB.Content = "c";
+                MascotV.IsEnableRotation = false;
+                LockB.Content = "d";
             }
             else
             {
-                locked = true;
-                ViewParent.MouseLeftButtonDown -= Grid_MouseLeftButtonDown;
-                ViewParent.MouseLeftButtonUp -= Grid_MouseLeftButtonUp;
-                ViewParent.MouseMove -= Grid_MouseMove;
-                MascotV.IsEnableRotation = false;
-                LockB.Content = "d";
+                MascotV.IsEnableRotation = prof.OnClick;
+                LockB.Content = "c";
             }
         }
     }

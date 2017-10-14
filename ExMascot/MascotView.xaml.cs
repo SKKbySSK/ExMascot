@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Media.Animation;
 
 namespace ExMascot
 {
@@ -21,6 +22,7 @@ namespace ExMascot
     /// </summary>
     public partial class MascotView : UserControl
     {
+        const int FixingDuration = 200;
         public MascotView()
         {
             InitializeComponent();
@@ -30,6 +32,34 @@ namespace ExMascot
         private void MascotSources_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             CurrentMascotIndex = 0;
+        }
+
+        public ContinuityStoryboard WalkWithJumpAnimate(TimeSpan Duration)
+        {
+            ContinuityStoryboard csb = new ContinuityStoryboard();
+            var begin = (Storyboard)Resources["ReadyWalkWithJump"];
+            ((DoubleAnimationUsingKeyFrames)begin.Children[0]).KeyFrames[0].Value = RotateTransform.Angle;
+            ((DoubleAnimationUsingKeyFrames)begin.Children[1]).KeyFrames[0].Value = TranslateTransform.X;
+            ((DoubleAnimationUsingKeyFrames)begin.Children[2]).KeyFrames[0].Value = TranslateTransform.Y;
+            csb.Add(begin);
+
+            var sb = (Storyboard)Resources["WalkWithJump"];
+            sb.RepeatBehavior = new RepeatBehavior(Duration);
+            csb.Add(sb);
+
+            var end = (Storyboard)Resources["FinishWalkWithJump"];
+            csb.Add(end);
+            csb.CurrentStoryboardChanging += (sender, e) =>
+            {
+                if(e.Storyboard == end)
+                {
+                    ((DoubleAnimationUsingKeyFrames)end.Children[0]).KeyFrames[0].Value = RotateTransform.Angle;
+                    ((DoubleAnimationUsingKeyFrames)end.Children[1]).KeyFrames[0].Value = TranslateTransform.X;
+                    ((DoubleAnimationUsingKeyFrames)end.Children[2]).KeyFrames[0].Value = TranslateTransform.Y;
+                }
+            };
+
+            return csb;
         }
 
         public bool IsEnableRotation { get; set; } = true;

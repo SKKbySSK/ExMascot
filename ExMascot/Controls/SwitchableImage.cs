@@ -56,7 +56,6 @@ namespace ExMascot.Controls
 
         public TimeSpan ClickTimeSpan { get; set; } = TimeSpan.FromMilliseconds(300);
 
-        public SwitchableImage(Image InitialImage) { }
         Image Image1 = new Image();
         Image Image2 = new Image();
 

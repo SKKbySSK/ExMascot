@@ -123,5 +123,16 @@ namespace ExMascot
         {
             UpdateMascotOpacity();
         }
+
+        private void AnimPlayB_Click(object sender, RoutedEventArgs e)
+        {
+            ContinuityStoryboard csb = null;
+            if(WalkWithJumpR.IsChecked ?? false)
+            {
+                csb = MascotPreview.WalkWithJumpAnimate(TimeSpan.FromSeconds(5));
+            }
+
+            csb?.BeginAnimation();
+        }
     }
 }

@@ -60,6 +60,25 @@ namespace ExMascot
         public double Y { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }
+        public bool WalkAround { get; set; } = true;
+        public double Interval { get; set; } = 5000;
+        public bool Locked { get; set; } = false;
+        public int Index { get; set; } = -1;
+
+        public int GetCurrentIndex()
+        {
+            if(Index > 0 && Index < Files.Length)
+            {
+                return Index;
+            }
+            else
+            {
+                if (Files.Length > 0)
+                    return 0;
+                else
+                    return -1;
+            }
+        }
 
         public override string ToString()
         {
