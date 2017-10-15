@@ -22,6 +22,7 @@ namespace ExMascot
     /// </summary>
     public partial class DesktopMascot : Window
     {
+        MascotContextMenuManager ContextMenuManager;
         Lazy<Sound> Player = new Lazy<Sound>();
         DispatcherTimer timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle);
         bool capturing = false;
@@ -32,6 +33,9 @@ namespace ExMascot
         public DesktopMascot(Profile Profile, string Path)
         {
             InitializeComponent();
+
+            path = Path;
+            prof = Profile;
 
             Activated += DesktopMascot_Activated;
             Deactivated += DesktopMascot_Deactivated;
@@ -44,17 +48,22 @@ namespace ExMascot
                 mw = bi.Width > mw ? bi.Width : mw;
                 mh = bi.Height > mh ? bi.Height : mh;
             }
+
             MascotV.CurrentMascotIndex = Profile.GetCurrentIndex();
             if (MascotV.CurrentMascotIndex < 0)
                 Close();
 
             Topmost = Profile.TopMost;
-            MascotV.IsEnableRotation = Profile.OnClick;
+            MascotV.IsEnableRotation = !Profile.Locked;
 
             Width = SystemParameters.PrimaryScreenWidth;
             Height = SystemParameters.PrimaryScreenHeight;
             Left = 0;
             Top = 0;
+
+            ContextMenuManager = new MascotContextMenuManager(this, Profile, Profile.Mascots[MascotV.CurrentMascotIndex]);
+            ContextMenuManager.PlayMethod = PlayVoice;
+            MascotV.ContextMenu = ContextMenuManager.Menu;
 
             ViewParent.Margin = new Thickness(Profile.X, Profile.Y, 0, 0);
 
@@ -65,14 +74,6 @@ namespace ExMascot
 
             ViewParent.Width = Profile.Width;
             ViewParent.Height = Profile.Height;
-
-            path = Path;
-            prof = Profile;
-            CloseB.Visibility = Visibility.Hidden;
-            LockB.Visibility = Visibility.Hidden;
-
-            UpdateLockState();
-            ((MenuItem)MascotV.ContextMenu.Items[0]).ItemsSource = Profile.Mascots[MascotV.CurrentMascotIndex].Voices.Where((v) => v.OnManual).ToList();
 
             timer.Interval = TimeSpan.FromMilliseconds(Profile.Interval);
             timer.Tick += Timer_Tick;
@@ -86,6 +87,9 @@ namespace ExMascot
                 if (Player.Value.IsPlaying)
                     return;
             }
+
+            if (prof.Behavior == MascotBehavior.None)
+                return;
 
             animating = true;
             const double DurationParHandred = 600;
@@ -208,48 +212,6 @@ namespace ExMascot
             Profile.ExportXML(prof, path);
         }
 
-        private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                if (CloseB.Visibility == Visibility.Hidden)
-                {
-                    CloseB.Visibility = Visibility.Visible;
-                    LockB.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    CloseB.Visibility = Visibility.Hidden;
-                    LockB.Visibility = Visibility.Hidden;
-                }
-            }
-        }
-
-        private void CloseB_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
-
-        private void LockB_Click(object sender, RoutedEventArgs e)
-        {
-            prof.Locked = !prof.Locked;
-            UpdateLockState();
-        }
-
-        void UpdateLockState()
-        {
-            if (prof.Locked)
-            {
-                MascotV.IsEnableRotation = false;
-                LockB.Content = "f";
-            }
-            else
-            {
-                MascotV.IsEnableRotation = prof.OnClick;
-                LockB.Content = "g";
-            }
-        }
-
         private void MascotV_Clicked(object sender, EventArgs e)
         {
             Mascot mascot = prof.Mascots[MascotV.CurrentMascotIndex];
@@ -265,7 +227,7 @@ namespace ExMascot
             }
             else
             {
-                ((MenuItem)MascotV.ContextMenu.Items[0]).ItemsSource = mascot.Voices.Where((v) => v.OnManual).ToList();
+                ContextMenuManager.SetMascot(mascot);
             }
         }
 
@@ -287,11 +249,86 @@ namespace ExMascot
             }
             MascotV.ShowCallout(Player.Value.Duration, Voice.Sentence);
         }
+    }
 
-        private void ChoiceItem_Click(object sender, RoutedEventArgs e)
+    class MascotContextMenuManager
+    {
+        public Action<Voice> PlayMethod { get; set; }
+
+        MenuItem FollowItem = new MenuItem() { Header = "追いかけさせる" };
+        MenuItem WalkItem = new MenuItem() { Header = "歩かせる" };
+        MenuItem StayItem = new MenuItem() { Header = "止める" };
+
+        MenuItem CloseWindowItem = new MenuItem() { Header = "閉じる" };
+        MenuItem LockMascotItem = new MenuItem() { Header = "マスコットを固定", IsCheckable = true };
+        public ContextMenu Menu { get; } = new ContextMenu();
+
+        public MascotContextMenuManager(DesktopMascot Window, Profile Profile, Mascot Mascot)
         {
-            Voice v = (Voice)((MenuItem)e.OriginalSource).Header;
-            PlayVoice(v);
+            SetMascot(Mascot);
+            InitHandlers(Window, Profile, Mascot);
+        }
+
+        public void SetMascot(Mascot Mascot)
+        {
+            Menu.Items.Clear();
+            foreach (Voice v in Mascot.Voices)
+            {
+                MenuItem mi = new MenuItem() { Header = v.Message };
+                mi.Click += (sender, e) =>
+                {
+                    PlayMethod?.Invoke(v);
+                };
+                Menu.Items.Add(mi);
+            }
+            Menu.Items.Add(new Separator());
+
+            Menu.Items.Add(FollowItem);
+            Menu.Items.Add(WalkItem);
+            Menu.Items.Add(StayItem);
+
+            Menu.Items.Add(new Separator());
+
+            Menu.Items.Add(LockMascotItem);
+            Menu.Items.Add(CloseWindowItem);
+        }
+
+        void InitHandlers(DesktopMascot Window, Profile Profile, Mascot Mascot)
+        {
+            FollowItem.Click += (sender, e) => BehaviorChanged(Profile, MascotBehavior.Follow);
+            WalkItem.Click += (sender, e) => BehaviorChanged(Profile, MascotBehavior.Walk);
+            StayItem.Click += (sender, e) => BehaviorChanged(Profile, MascotBehavior.None);
+
+            FollowItem.IsChecked = Profile.Behavior == MascotBehavior.Follow;
+            WalkItem.IsChecked = Profile.Behavior == MascotBehavior.Walk;
+            StayItem.IsChecked = Profile.Behavior == MascotBehavior.None;
+
+            {
+                LockMascotItem.IsChecked = Profile.Locked;
+                CheckableAssociate(LockMascotItem, (c) =>
+                {
+                    Profile.Locked = c;
+                    Window.MascotV.IsEnableRotation = !Profile.Locked;
+                });
+            }
+            {
+                CloseWindowItem.Click += (sender, e) => Window.Close();
+            }
+        }
+
+        void BehaviorChanged(Profile Profile, MascotBehavior Behavior)
+        {
+            FollowItem.IsChecked = Behavior == MascotBehavior.Follow;
+            WalkItem.IsChecked = Behavior == MascotBehavior.Walk;
+            StayItem.IsChecked = Behavior == MascotBehavior.None;
+            Profile.Behavior = Behavior;
+            
+        }
+
+        void CheckableAssociate(MenuItem Item, Action<bool> OnCheckStateChanged)
+        {
+            Item.Checked += (sender, e) => OnCheckStateChanged?.Invoke(true);
+            Item.Unchecked += (sender, e) => OnCheckStateChanged?.Invoke(false);
         }
     }
 }

@@ -144,9 +144,6 @@ namespace ExMascot
     {
         public string TItle { get; set; }
         public bool TopMost { get; set; } = true;
-        public bool OnClick { get; set; } = true;
-        public bool OnTime { get; set; } = true;
-        public TimeSpan TimeSpan { get; set; } = TimeSpan.FromMinutes(3);
         public double Opacity { get; set; } = 0.8;
         public double IdleOpacity { get; set; } = 1;
         public List<Mascot> Mascots { get; set; } = new List<Mascot>();
@@ -156,8 +153,8 @@ namespace ExMascot
         public double Height { get; set; }
         public MascotBehavior Behavior { get; set; }
         public double Interval { get; set; } = 5000;
-        public bool Locked { get; set; } = false;
         public int Index { get; set; } = -1;
+        public bool Locked { get; set; } = false;
 
         public int GetCurrentIndex()
         {

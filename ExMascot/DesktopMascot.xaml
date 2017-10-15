@@ -5,23 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ExMascot"
         mc:Ignorable="d" WindowStyle="None" AllowsTransparency="True"
-        Title="DesktopMascot" Height="300" Width="300" Background="Transparent" ShowInTaskbar="False" Closed="Window_Closed" MouseDoubleClick="Window_MouseDoubleClick">
+        Title="DesktopMascot" Height="300" Width="300" Background="Transparent" ShowInTaskbar="False" Closed="Window_Closed">
     <Grid>
         <Grid x:Name="ViewParent" MouseLeftButtonDown="Grid_MouseLeftButtonDown" MouseLeftButtonUp="Grid_MouseLeftButtonUp" MouseMove="Grid_MouseMove" ClipToBounds="False" Height="300" VerticalAlignment="Top" HorizontalAlignment="Left" Width="300">
-            <local:MascotView x:Name="MascotV" ClipToBounds="False" Clicked="MascotV_Clicked">
-                <local:MascotView.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem DisplayMemberPath="Message" Header="選択" Click="ChoiceItem_Click"/>
-                        <MenuItem Header="止めておく" IsCheckable="True"/>
-                        <MenuItem Header="追いかけさせる" IsCheckable="True"/>
-                        <MenuItem Header="歩かせる" IsCheckable="True"/>
-                    </ContextMenu>
-                </local:MascotView.ContextMenu>
-            </local:MascotView>
-        </Grid>
-        <Grid Height="41" VerticalAlignment="Top">
-            <Button x:Name="CloseB" Content="r" HorizontalAlignment="Right" Width="41" Visibility="Visible" FontFamily="Marlett" BorderBrush="#FF474747" Background="#FF323232" Foreground="White" Click="CloseB_Click"/>
-            <Button x:Name="LockB" Content="g" HorizontalAlignment="Right" Width="41" Visibility="Visible" FontFamily="Marlett" BorderBrush="#FF474747" Background="#FF323232" Foreground="White" Click="LockB_Click" Margin="0,0,41,0" FontSize="18"/>
+            <local:MascotView x:Name="MascotV" ClipToBounds="False" Clicked="MascotV_Clicked"/>
         </Grid>
     </Grid>
 </Window>

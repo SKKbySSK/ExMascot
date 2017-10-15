@@ -131,6 +131,7 @@ namespace ExMascot
             MascotC.Opacity = 0;
             MascotC.Visibility = Visibility.Visible;
             MascotC.Content = Content;
+            
             MascotC.Fade(OpacityProperty, 1, Completed: () =>
             {
                 DispatcherTimer dt = new DispatcherTimer(DispatcherPriority.Normal);
@@ -169,6 +170,11 @@ namespace ExMascot
             }
             return MascotSources[curInd];
         }
+    }
+
+    public enum CalloutPosition
+    {
+        LeftUp, LeftDown, RightUp, RightDown
     }
 
     public class MascotCollection : ObservableCollection<ImageSource>
