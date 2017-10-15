@@ -1,27 +1,28 @@
-﻿<UserControl x:Class="ExMascot.MascotView"
+﻿<UserControl
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:ExMascot"
              xmlns:controls="clr-namespace:ExMascot.Controls"
+             xmlns:ed="http://schemas.microsoft.com/expression/2010/drawing" x:Name="MascotParent" x:Class="ExMascot.MascotView"
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300" ClipToBounds="False">
+             d:DesignHeight="300" d:DesignWidth="300" ClipToBounds="False" RenderTransformOrigin="0.5,0.5">
     <UserControl.Resources>
         <Storyboard x:Key="WalkWithJump" FillBehavior="Stop">
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[2].(RotateTransform.Angle)" Storyboard.TargetName="ImageView">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[2].(RotateTransform.Angle)" Storyboard.TargetName="MascotParent">
                 <SplineDoubleKeyFrame KeyTime="0" Value="24"/>
                 <SplineDoubleKeyFrame KeyTime="0:0:1" Value="-27.293" KeySpline="0.5,0,1,1"/>
                 <SplineDoubleKeyFrame KeyTime="0:0:2" Value="24" KeySpline="0.5,0,1,1"/>
             </DoubleAnimationUsingKeyFrames>
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.Y)" Storyboard.TargetName="ImageView">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.Y)" Storyboard.TargetName="MascotParent">
                 <SplineDoubleKeyFrame KeyTime="0" Value="0"/>
                 <SplineDoubleKeyFrame KeyTime="0:0:0.5" Value="-42.002" KeySpline="0,0,0.5,1"/>
                 <SplineDoubleKeyFrame KeyTime="0:0:1" Value="0" KeySpline="0.5,0,1,1"/>
                 <SplineDoubleKeyFrame KeyTime="0:0:1.5" Value="-57.001" KeySpline="0,0,0.5,1"/>
                 <SplineDoubleKeyFrame KeyTime="0:0:2" Value="0" KeySpline="0.5,0,1,1"/>
             </DoubleAnimationUsingKeyFrames>
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)" Storyboard.TargetName="ImageView">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)" Storyboard.TargetName="MascotParent">
                 <SplineDoubleKeyFrame KeyTime="0" Value="0"/>
                 <SplineDoubleKeyFrame KeyTime="0:0:0.5" Value="4.765" KeySpline="0,0,0.5,1"/>
                 <SplineDoubleKeyFrame KeyTime="0:0:1" Value="0" KeySpline="0.5,0,1,1"/>
@@ -30,42 +31,43 @@
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
         <Storyboard x:Key="ReadyWalkWithJump" FillBehavior="Stop">
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[2].(RotateTransform.Angle)" Storyboard.TargetName="ImageView">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[2].(RotateTransform.Angle)" Storyboard.TargetName="MascotParent">
                 <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.3" Value="24"/>
             </DoubleAnimationUsingKeyFrames>
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)" Storyboard.TargetName="ImageView">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)" Storyboard.TargetName="MascotParent">
                 <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.3" Value="0"/>
             </DoubleAnimationUsingKeyFrames>
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.Y)" Storyboard.TargetName="ImageView">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.Y)" Storyboard.TargetName="MascotParent">
                 <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.3" Value="0"/>
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
         <Storyboard x:Key="FinishWalkWithJump" FillBehavior="Stop">
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[2].(RotateTransform.Angle)" Storyboard.TargetName="ImageView">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[2].(RotateTransform.Angle)" Storyboard.TargetName="MascotParent">
                 <EasingDoubleKeyFrame KeyTime="0" Value="24"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.3" Value="0"/>
             </DoubleAnimationUsingKeyFrames>
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)" Storyboard.TargetName="ImageView">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)" Storyboard.TargetName="MascotParent">
                 <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.3" Value="0"/>
             </DoubleAnimationUsingKeyFrames>
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.Y)" Storyboard.TargetName="ImageView">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.Y)" Storyboard.TargetName="MascotParent">
                 <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.3" Value="0"/>
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
     </UserControl.Resources>
-    <controls:SwitchableImage x:Name="ImageView" Clicked="SwitchableImage_Clicked" RenderTransformOrigin="0.5,0.5" ClipToBounds="False">
-        <controls:SwitchableImage.RenderTransform>
-            <TransformGroup>
-                <ScaleTransform/>
-                <SkewTransform/>
-                <RotateTransform x:Name="RotateTransform"/>
-                <TranslateTransform x:Name="TranslateTransform"/>
-            </TransformGroup>
-        </controls:SwitchableImage.RenderTransform>
+    <UserControl.RenderTransform>
+        <TransformGroup>
+            <ScaleTransform/>
+            <SkewTransform/>
+            <RotateTransform x:Name="RotateTransform"/>
+            <TranslateTransform x:Name="TranslateTransform"/>
+        </TransformGroup>
+    </UserControl.RenderTransform>
+    <controls:SwitchableImage x:Name="ImageView" Clicked="SwitchableImage_Clicked">
+        <ed:Callout x:Name="MascotC" AnchorPoint="0,1.5" CalloutStyle="Cloud" Content="Callout" Fill="#FFF4F4F5" FontSize="14.667" Margin="0,-128,-256,0" Stroke="Black" HorizontalAlignment="Right" Width="256" Height="84" VerticalAlignment="Top"/>
     </controls:SwitchableImage>
 </UserControl>

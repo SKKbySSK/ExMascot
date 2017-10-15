@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Xml.Serialization;
+using System.ComponentModel;
 
 namespace ExMascot
 {
@@ -46,6 +47,99 @@ namespace ExMascot
         public static List<string> DamagedProfiles { get; } = new List<string>();
     }
 
+    public enum MascotBehavior
+    {
+        Follow, Walk, None
+    }
+
+    public class Voice : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        string fp = null;
+        public string FilePath
+        {
+            get { return fp; }
+            set
+            {
+                fp = value;
+                OnPropertyChanged(nameof(FilePath));
+            }
+        }
+
+        string sent = null;
+        public string Sentence
+        {
+            get { return sent; }
+            set
+            {
+                sent = value;
+                OnPropertyChanged(nameof(Sentence));
+            }
+        }
+
+        bool _click = true, _rand = false, _manual = true;
+
+        public bool OnClick
+        {
+            get { return _click; }
+            set
+            {
+                _click = value;
+                OnPropertyChanged(nameof(OnClick));
+            }
+        }
+        public bool OnRandom
+        {
+            get { return _rand; }
+            set
+            {
+                _rand = value;
+                OnPropertyChanged(nameof(OnRandom));
+            }
+        }
+
+        public bool OnManual
+        {
+            get { return _manual; }
+            set
+            {
+                _manual = value;
+                OnPropertyChanged(nameof(OnManual));
+            }
+        }
+
+        string msg;
+        public string Message
+        {
+            get { return msg; }
+            set
+            {
+                msg = value;
+                OnPropertyChanged(nameof(Message));
+            }
+        }
+
+        void OnPropertyChanged(string Name)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(Name));
+        }
+    }
+
+    public class Mascot
+    {
+        public string ImageFilePath { get; set; }
+        public List<Voice> Voices { get; set; } = new List<Voice>();
+
+        public override string ToString()
+        {
+            if (File.Exists(ImageFilePath))
+                return Path.GetFileName(ImageFilePath);
+            else
+                return $"!{Path.GetFileName(ImageFilePath)}";
+        }
+    }
+
     public class Profile
     {
         public string TItle { get; set; }
@@ -55,25 +149,25 @@ namespace ExMascot
         public TimeSpan TimeSpan { get; set; } = TimeSpan.FromMinutes(3);
         public double Opacity { get; set; } = 0.8;
         public double IdleOpacity { get; set; } = 1;
-        public string[] Files { get; set; }
+        public List<Mascot> Mascots { get; set; } = new List<Mascot>();
         public double X { get; set; }
         public double Y { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }
-        public bool WalkAround { get; set; } = true;
+        public MascotBehavior Behavior { get; set; }
         public double Interval { get; set; } = 5000;
         public bool Locked { get; set; } = false;
         public int Index { get; set; } = -1;
 
         public int GetCurrentIndex()
         {
-            if(Index > 0 && Index < Files.Length)
+            if(Index > 0 && Index < Mascots.Count)
             {
                 return Index;
             }
             else
             {
-                if (Files.Length > 0)
+                if (Mascots.Count > 0)
                     return 0;
                 else
                     return -1;

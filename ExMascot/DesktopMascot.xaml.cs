@@ -22,10 +22,12 @@ namespace ExMascot
     /// </summary>
     public partial class DesktopMascot : Window
     {
+        Lazy<Sound> Player = new Lazy<Sound>();
         DispatcherTimer timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle);
         bool capturing = false;
         Profile prof = null;
         string path;
+        bool animating = false;
 
         public DesktopMascot(Profile Profile, string Path)
         {
@@ -35,9 +37,9 @@ namespace ExMascot
             Deactivated += DesktopMascot_Deactivated;
 
             double mw = 0, mh = 0;
-            foreach (string f in Profile.Files)
+            foreach (Mascot f in Profile.Mascots)
             {
-                BitmapImage bi = new BitmapImage(new Uri(f));
+                BitmapImage bi = new BitmapImage(new Uri(f.ImageFilePath));
                 MascotV.MascotSources.Add(bi);
                 mw = bi.Width > mw ? bi.Width : mw;
                 mh = bi.Height > mh ? bi.Height : mh;
@@ -70,6 +72,7 @@ namespace ExMascot
             LockB.Visibility = Visibility.Hidden;
 
             UpdateLockState();
+            ((MenuItem)MascotV.ContextMenu.Items[0]).ItemsSource = Profile.Mascots[MascotV.CurrentMascotIndex].Voices.Where((v) => v.OnManual).ToList();
 
             timer.Interval = TimeSpan.FromMilliseconds(Profile.Interval);
             timer.Tick += Timer_Tick;
@@ -78,44 +81,89 @@ namespace ExMascot
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            if (prof.WalkAround)
+            if (Player.IsValueCreated)
             {
-                const double DurationParHandred = 600;
+                if (Player.Value.IsPlaying)
+                    return;
+            }
 
+            animating = true;
+            const double DurationParHandred = 600;
+            double Y = 0;
+            double X = 0;
+            if (prof.Behavior == MascotBehavior.Walk)
+            {
                 Random RDeltaX = new Random(Environment.TickCount);
                 Random RDeltaY = new Random(Environment.TickCount + 10);
 
-                double Y = RDeltaX.NextDouble() * (SystemParameters.WorkArea.Height - ViewParent.Height);
-                double X = RDeltaY.NextDouble() * (SystemParameters.WorkArea.Width - ViewParent.Width);
-
-                double dX = ViewParent.Margin.Left - X, dY = ViewParent.Margin.Top - Y;
-                double length = Math.Sqrt((dX * dX) + (dY * dY));
-                double duration = length / 100 * DurationParHandred;
-                TimeSpan tdur = TimeSpan.FromMilliseconds(duration);
-
-                ContinuityStoryboard csb = MascotV.WalkWithJumpAnimate(tdur);
-                csb.CurrentStoryboardChanging += (_, ev) =>
-                {
-                    if(ev.Index == 1)
-                    {
-                        ThicknessAnimation ta = new ThicknessAnimation(ViewParent.Margin, new Thickness(X, Y, 0, 0), new Duration(tdur));
-                        ta.FillBehavior = FillBehavior.Stop;
-                        ta.Completed += (_1, _2) =>
-                        {
-                            ViewParent.Margin = new Thickness(X, Y, 0, 0);
-                        };
-
-                        ViewParent.BeginAnimation(MarginProperty, ta);
-                    }
-                };
-                csb.Completed += (_, _2) =>
-                {
-                    csb.StopAnimation();
-                    timer.Start();
-                };
-                csb.BeginAnimation();
-                timer.Stop();
+                Y = RDeltaY.NextDouble() * (SystemParameters.WorkArea.Height - ViewParent.Height);
+                X = RDeltaX.NextDouble() * (SystemParameters.WorkArea.Width - ViewParent.Width);
             }
+            else if(prof.Behavior == MascotBehavior.Follow)
+            {
+                const double regionThresh = 50;
+                System.Drawing.Point point = System.Windows.Forms.Control.MousePosition;
+
+                if (point.X < 0)
+                    point.X = 0;
+                else if (SystemParameters.WorkArea.Width <= point.X + ViewParent.Width)
+                    point.X = (int)(SystemParameters.WorkArea.Width - ViewParent.Width);
+
+                if (point.Y < 0)
+                    point.Y = 0;
+                else if (SystemParameters.WorkArea.Height <= point.Y + ViewParent.Height)
+                    point.Y = (int)(SystemParameters.WorkArea.Height - ViewParent.Height);
+
+                Thickness region = new Thickness(ViewParent.Margin.Left - regionThresh, ViewParent.Margin.Top - regionThresh,
+                    ViewParent.Margin.Left + ViewParent.Width + regionThresh, ViewParent.Margin.Top + ViewParent.Height + regionThresh);
+
+                if (IsInsideOfRegion(point.X, point.Y, region))
+                    return;
+
+                X = point.X;
+                Y = point.Y;
+            }
+
+            double dX = ViewParent.Margin.Left - X, dY = ViewParent.Margin.Top - Y;
+            double length = Math.Sqrt((dX * dX) + (dY * dY));
+            double duration = length / 100 * DurationParHandred;
+            TimeSpan tdur = TimeSpan.FromMilliseconds(duration);
+
+            ContinuityStoryboard csb = MascotV.WalkWithJumpAnimate(tdur);
+            csb.CurrentStoryboardChanging += (_, ev) =>
+            {
+                if (ev.Index == 1)
+                {
+                    ThicknessAnimation ta = new ThicknessAnimation(ViewParent.Margin, new Thickness(X, Y, 0, 0), new Duration(tdur))
+                    {
+                        FillBehavior = FillBehavior.Stop
+                    };
+                    ta.Completed += (_1, _2) =>
+                    {
+                        ViewParent.Margin = new Thickness(X, Y, 0, 0);
+                        animating = false;
+                    };
+
+                    ViewParent.BeginAnimation(MarginProperty, ta);
+                }
+            };
+            csb.Completed += (_, _2) =>
+            {
+                csb.StopAnimation();
+                timer.Start();
+            };
+            csb.BeginAnimation();
+            timer.Stop();
+        }
+
+        bool IsInsideOfRegion(double X, double Y, Thickness Region)
+        {
+            if(Region.Left <= X && X <= Region.Right)
+            {
+                if (Region.Top <= Y && Y <= Region.Bottom)
+                    return true;
+            }
+            return false;
         }
 
         private void DesktopMascot_Deactivated(object sender, EventArgs e)
@@ -193,13 +241,57 @@ namespace ExMascot
             if (prof.Locked)
             {
                 MascotV.IsEnableRotation = false;
-                LockB.Content = "d";
+                LockB.Content = "f";
             }
             else
             {
                 MascotV.IsEnableRotation = prof.OnClick;
-                LockB.Content = "c";
+                LockB.Content = "g";
             }
+        }
+
+        private void MascotV_Clicked(object sender, EventArgs e)
+        {
+            Mascot mascot = prof.Mascots[MascotV.CurrentMascotIndex];
+            if (!MascotV.IsEnableRotation)
+            {
+                var col = mascot.Voices.Where((v) => v.OnClick).ToList();
+                if (col.Count > 0)
+                {
+                    Random rnd = new Random();
+                    Voice v = col[rnd.Next(0, col.Count)];
+                    PlayVoice(v);
+                }
+            }
+            else
+            {
+                ((MenuItem)MascotV.ContextMenu.Items[0]).ItemsSource = mascot.Voices.Where((v) => v.OnManual).ToList();
+            }
+        }
+
+        void PlayVoice(Voice Voice)
+        {
+            if (animating) return;
+            if (!string.IsNullOrEmpty(Voice.FilePath))
+            {
+                if (System.IO.File.Exists(Voice.FilePath))
+                {
+                    if (Player.IsValueCreated)
+                        Player.Value.Stop();
+
+                    if (Player.Value.ReadyToPlay(Voice.FilePath))
+                        Player.Value.PlayFile();
+                    else
+                        Console.WriteLine($"再生に失敗しました : {Voice.FilePath}");
+                }
+            }
+            MascotV.ShowCallout(Player.Value.Duration, Voice.Sentence);
+        }
+
+        private void ChoiceItem_Click(object sender, RoutedEventArgs e)
+        {
+            Voice v = (Voice)((MenuItem)e.OriginalSource).Header;
+            PlayVoice(v);
         }
     }
 }

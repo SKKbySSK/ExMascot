@@ -41,7 +41,7 @@ namespace ExMascot
         {
             if(ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                MascotL.Items.Add(ofd.FileName);
+                MascotL.Items.Add(new Mascot() { ImageFilePath = ofd.FileName });
                 MascotPreview.MascotSources.Add(new BitmapImage(new Uri(ofd.FileName)));
             }
         }
@@ -65,7 +65,7 @@ namespace ExMascot
 
             Profile prof = new Profile();
             prof.TItle = TitleT.Text;
-            prof.Files = MascotL.Items.OfType<string>().ToArray();
+            prof.Mascots = MascotL.Items.OfType<Mascot>().ToList();
             prof.Opacity = OpaS.Value;
             prof.IdleOpacity = IdleOpaS.Value;
             prof.TopMost = IsTopMostC.IsChecked ?? false;
@@ -82,10 +82,10 @@ namespace ExMascot
 
                 MascotL.Items.Clear();
                 MascotPreview.MascotSources.Clear();
-                foreach(string f in prof.Files)
+                foreach(Mascot f in prof.Mascots)
                 {
                     MascotL.Items.Add(f);
-                    MascotPreview.MascotSources.Add(new BitmapImage(new Uri(f)));
+                    MascotPreview.MascotSources.Add(new BitmapImage(new Uri(f.ImageFilePath)));
                 }
 
                 OpaS.Value = prof.Opacity;
@@ -133,6 +133,19 @@ namespace ExMascot
             }
 
             csb?.BeginAnimation();
+        }
+
+        private void MascotL_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if(e.LeftButton == MouseButtonState.Pressed)
+            {
+                if(MascotL.SelectedItem != null)
+                {
+                    Mascot mascot = (Mascot)MascotL.SelectedItem;
+                    MascotEditor editor = new MascotEditor(mascot);
+                    editor.ShowDialog();
+                }
+            }
         }
     }
 }
